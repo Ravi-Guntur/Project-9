@@ -1,0 +1,49 @@
+---
+- name: Deploy Application with Docker
+  hosts: web_servers
+  become: yes
+  vars:
+    app_name: "your-app"
+    container_name: "{{ app_name }}-container"
+    
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+        
+    - name: Stop existing container
+      docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      ignore_errors: yes
+      
+    - name: Remove old image
+      docker_image:
+        name: "{{ docker_image }}:{{ docker_tag }}"
+        state: absent
+      ignore_errors: yes
+      
+    - name: Copy Docker image from Jenkins server
+      shell: |
+        docker save {{ docker_image }}:{{ docker_tag }} | ssh {{ ansible_host }} 'docker load'
+      delegate_to: localhost
+      
+    - name: Run new container
+      docker_container:
+        name: "{{ container_name }}"
+        image: "{{ docker_image }}:{{ docker_tag }}"
+        state: started
+        restart_policy: always
+        ports:
+          - "80:5000"
