@@ -26,13 +26,10 @@ pipeline {
         stage('Push to Registry') {
             steps {
                 script {
-                    // Optional: Push to Docker Hub
-                    /*
                     docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials') {
                         docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").push()
                         docker.image("${DOCKER_IMAGE}:latest").push()
                     }
-                    */
                 }
             }
         }
