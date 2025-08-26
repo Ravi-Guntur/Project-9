@@ -1,19 +1,19 @@
 pipeline {
     agent any
-    
+
     environment {
         DOCKER_IMAGE = "your-app"
         DOCKER_TAG = "${BUILD_NUMBER}"
         REGISTRY = "your-dockerhub-username" // Optional: for Docker Hub
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -22,7 +22,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Push to Registry') {
             steps {
                 script {
@@ -36,25 +36,28 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deploy with Ansible') {
             steps {
-                ansiblePlaybook(
-                    playbook: 'ansible/playbook.yml',
-                    inventory: 'ansible/inventory.ini',
-                    extraVars: [
-                        docker_image: "${DOCKER_IMAGE}",
-                        docker_tag: "${DOCKER_TAG}"
-                    ]
-                )
+                script {
+                    ansiblePlaybook(
+                        playbook: 'ansible/playbook.yml',
+                        inventory: 'ansible/inventory.ini',
+                        extraVars: [
+                            docker_image: "${DOCKER_IMAGE}",
+                            docker_tag: "${DOCKER_TAG}"
+                        ]
+                    )
+                }
             }
         }
     }
-    
+
     post {
         always {
-            // Clean up images
-            sh "docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
+            script {
+                sh "docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
+            }
         }
         success {
             echo 'Pipeline completed successfully!'
