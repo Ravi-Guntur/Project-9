@@ -5,40 +5,48 @@
   vars:
     app_name: "your-app"
     container_name: "{{ app_name }}-container"
-    
+
   tasks:
     - name: Update apt cache
       apt:
         update_cache: yes
-        
+
     - name: Install Docker
       apt:
         name: docker.io
         state: present
-        
     - name: Start and enable Docker
       systemd:
         name: docker
         state: started
         enabled: yes
-        
+
     - name: Stop existing container
       docker_container:
         name: "{{ container_name }}"
         state: absent
       ignore_errors: yes
-      
+
     - name: Remove old image
       docker_image:
-        name: "{{ docker_image }}:{{ docker_tag }}"
+        name: "{{ docker_image }}"
+        tag: "{{ docker_tag }}"
         state: absent
       ignore_errors: yes
-      
-    - name: Copy Docker image from Jenkins server
+
+    - name: Save Docker image on Jenkins and transfer to target host
       shell: |
-        docker save {{ docker_image }}:{{ docker_tag }} | ssh {{ ansible_host }} 'docker load'
+        docker save {{ docker_image }}:{{ docker_tag }} | bzip2 > /tmp/image.tar.bz2
       delegate_to: localhost
-      
+
+    - name: Copy image archive to target host
+      copy:
+        src: /tmp/image.tar.bz2
+        dest: /tmp/image.tar.bz2
+    - name: Load Docker image on target host
+      shell: |
+        bunzip2 -c /tmp/image.tar.bz2 | docker load
+
     - name: Run new container
       docker_container:
         name: "{{ container_name }}"
