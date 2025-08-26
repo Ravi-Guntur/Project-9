@@ -2,6 +2,7 @@
 - name: Deploy Application with Docker
   hosts: web_servers
   become: yes
+
   vars:
     app_name: "your-app"
     container_name: "{{ app_name }}-container"
@@ -15,6 +16,7 @@
       apt:
         name: docker.io
         state: present
+
     - name: Start and enable Docker
       systemd:
         name: docker
@@ -34,15 +36,17 @@
         state: absent
       ignore_errors: yes
 
-    - name: Save Docker image on Jenkins and transfer to target host
+    - name: Save Docker image on Jenkins and compress it
+      delegate_to: localhost
+      run_once: true
       shell: |
         docker save {{ docker_image }}:{{ docker_tag }} | bzip2 > /tmp/image.tar.bz2
-      delegate_to: localhost
 
     - name: Copy image archive to target host
       copy:
         src: /tmp/image.tar.bz2
         dest: /tmp/image.tar.bz2
+
     - name: Load Docker image on target host
       shell: |
         bunzip2 -c /tmp/image.tar.bz2 | docker load
