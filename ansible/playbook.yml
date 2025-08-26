@@ -40,15 +40,11 @@
         state: absent
       ignore_errors: yes
 
-    - name: Save Docker image on Jenkins and compress it
-      delegate_to: localhost
-      run_once: true
-      shell: |
-        docker save {{ docker_image }}:{{ docker_tag }} | bzip2 > /tmp/image.tar.bz2
-
-    - name: Load Docker image on target host
-      shell: |
-        bunzip2 -c /tmp/image.tar.bz2 | docker load
+    - name: Pull Docker image from Docker Hub
+      docker_image:
+        name: "{{ docker_image }}"
+        tag: "{{ docker_tag }}"
+        source: pull
 
     - name: Run new container
       docker_container:
