@@ -1,20 +1,24 @@
 ---
 - name: Deploy Application with Docker
-  hosts: web_servers
+  hosts: localhost
   become: yes
+  connection: local
 
   vars:
     app_name: "your-app"
     container_name: "{{ app_name }}-container"
+    docker_image: "ke102erthi/your-app"
+    docker_tag: "latest"
 
   tasks:
-    - name: Update apt cache
-      apt:
-        update_cache: yes
+    - name: Update yum cache
+      yum:
+        name: "*"
+        state: latest
 
     - name: Install Docker
-      apt:
-        name: docker.io
+      yum:
+        name: docker
         state: present
 
     - name: Start and enable Docker
@@ -41,11 +45,6 @@
       run_once: true
       shell: |
         docker save {{ docker_image }}:{{ docker_tag }} | bzip2 > /tmp/image.tar.bz2
-
-    - name: Copy image archive to target host
-      copy:
-        src: /tmp/image.tar.bz2
-        dest: /tmp/image.tar.bz2
 
     - name: Load Docker image on target host
       shell: |
