@@ -16,8 +16,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
-                    docker.build("${DOCKER_IMAGE}:latest")
+                    def image = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    image.tag("latest")
                 }
             }
         }
@@ -36,14 +36,16 @@ pipeline {
         stage('Deploy with Ansible') {
             steps {
                 script {
-                    ansiblePlaybook(
-                        playbook: 'ansible/playbook.yml',
-                        inventory: 'ansible/inventory.ini',
-                        extraVars: [
-                            docker_image: "${DOCKER_IMAGE}",
-                            docker_tag: "${DOCKER_TAG}"
-                        ]
-                    )
+                    withEnv(["ANSIBLE_HOST_KEY_CHECKING=False"]) {
+                        ansiblePlaybook(
+                            playbook: 'ansible/playbook.yml',
+                            inventory: 'ansible/inventory.ini',
+                            extraVars: [
+                                docker_image: "${DOCKER_IMAGE}",
+                                docker_tag: "${DOCKER_TAG}"
+                            ]
+                        )
+                    }
                 }
             }
         }
