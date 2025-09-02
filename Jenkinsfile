@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "ravi kumar/your-app"   // Replace 'your-app' with your actual image name
+        DOCKER_IMAGE = "ravikumarbabburi007619/your-app"   // Replace 'your-app' with your actual image name
         DOCKER_TAG = "${BUILD_NUMBER}"
     }
 
